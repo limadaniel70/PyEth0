@@ -20,7 +20,9 @@
 
 import socket
 from ipaddress import IPv4Address, IPv6Address, ip_address
+
 from pyeth0.exceptions import InvalidHostname
+
 
 class PortScanner:
 
@@ -32,8 +34,8 @@ class PortScanner:
             hostname (str): The hostname to be resolved (e.g., "localhost").
 
         Returns:
-            IPv4Address | IPv6Address | None: Returns the corresponding IP address if the resolution is successful;
-            otherwise, returns None.
+            IPv4Address | IPv6Address | None: Returns the corresponding IP address if the
+            resolution is successful; otherwise, returns None.
         """
         try:
             ip = socket.gethostbyname(hostname)
@@ -42,7 +44,9 @@ class PortScanner:
             return None
 
     @staticmethod
-    def resolve_target(target: IPv4Address | IPv6Address | str) -> IPv4Address | IPv6Address:
+    def resolve_target(
+        target: IPv4Address | IPv6Address | str,
+    ) -> IPv4Address | IPv6Address:
         """Resolve the target to an IP address if it is a hostname.
 
         Args:
@@ -65,7 +69,8 @@ class PortScanner:
         """Scans multiple targets for open ports.
 
         Args:
-            targets (list[IPv4Address | IPv6Address | str]): List of IP addresses or hostnames to be scanned.
+            targets (list[IPv4Address | IPv6Address | str]): List of IP addresses or
+            hostnames to be scanned.
             ports (list[int]): List of ports to be scanned for each target.
 
         Returns:
@@ -77,7 +82,7 @@ class PortScanner:
         for target in targets:
             targets_host.append(PortScanner.resolve_target(target))
 
-        result = {str(host): [] for host in targets_host}
+        result: dict[str, list[int]] = {str(host): [] for host in targets_host}
 
         for host in targets_host:
             for port in ports:
