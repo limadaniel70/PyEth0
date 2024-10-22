@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "pyeth0"
+version = "0.1.0"
+description = ""
+authors = ["Daniel Lima"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+isort = "^5.13.2"
+mypy = "^1.12.1"
+pylint = "^3.3.1"
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
