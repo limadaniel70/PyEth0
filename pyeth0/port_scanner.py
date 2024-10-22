@@ -1,5 +1,5 @@
-from ipaddress import ip_address, IPv4Address, IPv6Address
 import socket
+from ipaddress import IPv4Address, IPv6Address, ip_address
 
 
 class PortScanner:
