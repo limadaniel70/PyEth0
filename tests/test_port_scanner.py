@@ -5,12 +5,12 @@ from ipaddress import ip_address
 class TestPortScanner:
 
     def test_scan_port_open(self):
-        target = "localhost"
-        port = 80
+        target = "scanme.nmap.org"
+        port = 22
         assert PortScanner.scan_port(target, port) == True
 
     def test_scan_port_closed(self):
-        target = "localhost"
+        target = "scanme.nmap.org"
         port = 9999
         assert PortScanner.scan_port(target, port) == False
 
