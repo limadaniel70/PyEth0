@@ -26,9 +26,12 @@ from pyeth0.exceptions import InvalidHostname
 
 class PortScanner:
 
+    DEFAULT_TIMEOUT = 0.1
+
     @staticmethod
     def parse_hostname(hostname: str) -> IPv4Address | IPv6Address | None:
-        """Resolve a hostname to an IP address.
+        """
+        Resolve a hostname to an IP address.
 
         Args:
             hostname (str): The hostname to be resolved (e.g., "localhost").
@@ -47,7 +50,8 @@ class PortScanner:
     def resolve_target(
         target: IPv4Address | IPv6Address | str,
     ) -> IPv4Address | IPv6Address:
-        """Resolve the target to an IP address if it is a hostname.
+        """
+        Resolve the target to an IP address if it is a hostname.
 
         Args:
             target (IPv4Address | IPv6Address | str): The target to resolve.
@@ -66,7 +70,8 @@ class PortScanner:
     def scan_multiple_targets(
         targets: list[IPv4Address | IPv6Address | str], ports: list[int]
     ) -> dict[str, list[int]]:
-        """Scans multiple targets for open ports.
+        """
+        Scans multiple targets for open ports.
 
         Args:
             targets (list[IPv4Address | IPv6Address | str]): List of IP addresses or
@@ -110,7 +115,7 @@ class PortScanner:
 
         for port in ports:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(1)  # Set timeout for the connection attempt
+                s.settimeout(PortScanner.DEFAULT_TIMEOUT)  # Set timeout for the connection attempt
                 result = s.connect_ex((str(target_host), port))
                 if result == 0:
                     open_ports.append(port)
@@ -132,7 +137,7 @@ class PortScanner:
         target_host = PortScanner.resolve_target(target)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(1)
+            s.settimeout(PortScanner.DEFAULT_TIMEOUT)
             return s.connect_ex((str(target_host), port)) == 0
 
     @staticmethod
@@ -156,7 +161,7 @@ class PortScanner:
 
         for port in range(port_range[0], port_range[1]):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(1)
+                s.settimeout(PortScanner.DEFAULT_TIMEOUT)
                 result = s.connect_ex((str(target_host), port))
                 if result == 0:
                     open_ports.append(port)
