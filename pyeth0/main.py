@@ -1,6 +1,8 @@
 import socket
 from ipaddress import ip_address
+
 from constants import *
+
 from pyeth0.port_scanner import PortScanner
 
 host_name = "google.com"
