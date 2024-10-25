@@ -25,7 +25,6 @@ from pyeth0.exceptions import InvalidHostname
 
 
 class PortScanner:
-
     DEFAULT_TIMEOUT = 0.1
 
     @staticmethod
@@ -65,6 +64,31 @@ class PortScanner:
                 raise InvalidHostname
             return parsed_target
         return target
+
+    @staticmethod
+    def scan_port(target_host: IPv4Address | IPv6Address, port: int) -> bool:
+        """
+        Checks if a specific port is open on the target host.
+
+        Args:
+            target_host (ip_address | str): Target IP address .
+            port (int): Port to check.
+
+        Returns:
+            bool: True if the port is open, False otherwise.
+        """
+
+        if isinstance(target_host, IPv6Address):
+            with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+                s.settimeout(PortScanner.DEFAULT_TIMEOUT)
+                return s.connect_ex((str(target_host), port)) == 0
+
+        elif isinstance(target_host, IPv4Address):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(PortScanner.DEFAULT_TIMEOUT)
+                return s.connect_ex((str(target_host), port)) == 0
+        else:
+            return False
 
     @staticmethod
     def scan_multiple_targets(
@@ -109,36 +133,15 @@ class PortScanner:
         Returns:
             list[int]: List of open ports.
         """
+        target_host = PortScanner.resolve_target(target)
+
         open_ports: list[int] = []
 
-        target_host = PortScanner.resolve_target(target)
-
         for port in ports:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(PortScanner.DEFAULT_TIMEOUT)  # Set timeout for the connection attempt
-                result = s.connect_ex((str(target_host), port))
-                if result == 0:
-                    open_ports.append(port)
+            if PortScanner.scan_port(target_host, port):
+                open_ports.append(port)
 
         return open_ports
-
-    @staticmethod
-    def scan_port(target: IPv4Address | IPv6Address | str, port: int) -> bool:
-        """
-        Checks if a specific port is open on the target host.
-
-        Args:
-            target (ip_address | str): Target IP address or hostname.
-            port (int): Port to check.
-
-        Returns:
-            bool: True if the port is open, False otherwise.
-        """
-        target_host = PortScanner.resolve_target(target)
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(PortScanner.DEFAULT_TIMEOUT)
-            return s.connect_ex((str(target_host), port)) == 0
 
     @staticmethod
     def get_open_ports(
@@ -155,14 +158,11 @@ class PortScanner:
         Returns:
             list[int]: List of open ports.
         """
-        open_ports: list[int] = []
-
         target_host = PortScanner.resolve_target(target)
 
+        open_ports: list[int] = []
+
         for port in range(port_range[0], port_range[1]):
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(PortScanner.DEFAULT_TIMEOUT)
-                result = s.connect_ex((str(target_host), port))
-                if result == 0:
-                    open_ports.append(port)
+            if PortScanner.scan_port(target_host, port):
+                open_ports.append(port)
         return open_ports
