@@ -1,3 +1,5 @@
+import platform
+
 COMMON_TCP_PORTS: dict[int, str] = {
     20: "ftp-data",
     21: "ftp",
@@ -39,3 +41,10 @@ COMMON_TCP_PORTS: dict[int, str] = {
     11211: "memcached",
     27017: "mongodb",
 }
+
+
+def get_plataform() -> str:
+    return platform.system()
+
+
+PLATAFORM = get_plataform()
