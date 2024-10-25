@@ -1,9 +1,24 @@
 import ipaddress
 import subprocess
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
+from multiprocessing import pool
+
+from pyeth0.constants import PLATAFORM
 
 
 class HostScanner:
+
+    def __init__(self, network: IPv4Network | IPv6Network | str):
+        self.target_network = HostScanner.resolve_network(network)
+        self.n_of_hosts = self.target_network.num_addresses
+
+    @staticmethod
+    def resolve_network(
+        network: IPv4Network | IPv6Network | str,
+    ) -> IPv4Network | IPv6Network:
+        if isinstance(network, str):
+            return ipaddress.ip_network(network)
+        return network
 
     @staticmethod
     def ping(target: IPv4Address | IPv6Address, count: int = 1) -> bool:
@@ -15,8 +30,10 @@ class HostScanner:
         :param count: The number of ping packets to send. Default is 1.
         :return: Returns True if the host is reachable, otherwise False.
         """
-        # ! this command doesn't work on Windows.
-        command = ["ping", "-c", str(count), "-q", format(target)]
+        if PLATAFORM == "Windows":
+            command = ["ping", "-n", str(count), "-q", format(target)]
+        else:
+            command = ["ping", "-c", str(count), "-q", format(target)]
         try:
             # This approach is veeeeeeery slow
             result = subprocess.run(
@@ -26,36 +43,26 @@ class HostScanner:
         except Exception as e:
             return False
 
-    @staticmethod
-    def ping_scan(
-        network: IPv4Network | IPv6Network | str,
-    ) -> list[IPv4Address | IPv6Address]:
+    def ping_scan(self) -> list[IPv4Address | IPv6Address]:
         """
         Perform a ping scan on a network to identify reachable hosts.
 
-        :param network: The network to scan, which can be a network object
-                        or a string representing the network.
         :return: A list of IP addresses that are reachable in the specified network.
         """
-        up_hosts = []
 
-        if isinstance(network, str):
-            target_network = ipaddress.ip_network(network)
-        else:
-            target_network = network
+        target_hosts = list(self.target_network.hosts())
 
-        for target_host in target_network.hosts():
-            if HostScanner.ping(target_host):
-                up_hosts.append(target_host)
+        with pool.Pool() as p:
+            result = p.map(self.ping, target_hosts)
 
+        up_hosts = [host for host, val in zip(target_hosts, result) if val == True]
         return up_hosts
 
 
 if __name__ == "__main__":
-    sc = HostScanner()
-    net = ipaddress.ip_network("192.168.0.0/24")
+    sc = HostScanner("192.168.0.0/24")
     print("[*] Scanning...")
-    hosts = sc.ping_scan(net)
+    hosts = sc.ping_scan()
     if len(hosts) > 1:
         print("[*] Hosts found: ")
         for i, host in enumerate(hosts):
