@@ -48,7 +48,7 @@ class TCPListener:
     @staticmethod
     def handle_client(client_socket: socket.socket):
         request = client_socket.recv(1024)
-        print(f"[*] Received {request.decode()}")
+        print(f"[*] Received: {request}")
         client_socket.send(b"ACK")
         client_socket.close()
 
