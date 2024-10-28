@@ -1,10 +1,8 @@
+import asyncio
 import ipaddress
-import subprocess
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
-from math import floor, log2
-from multiprocessing import pool
 
-from pyeth0.constants import PLATAFORM
+from pyeth0.constants import PLATFORM
 
 
 class HostScanner:
@@ -14,16 +12,27 @@ class HostScanner:
         self.n_of_hosts = self.target_network.num_addresses
 
     def change_network(self, new_network: IPv4Network | IPv6Network | str):
+        """
+        Updates the target network for the host scanner.
+
+        Args:
+            new_network (IPv4Network | IPv6Network | str): The new network to set, 
+            which can be an IPv4 network, IPv6 network, or a string representation 
+            of the network.
+        """
         self.target_network = HostScanner.resolve_network(new_network)
         self.n_of_hosts = self.target_network.num_addresses
 
     @property
     def target_hosts(self) -> list[IPv6Address | IPv4Address]:
-        return list(self.target_network.hosts())
+        """
+        Generates a list containing the available hosts on a network.
 
-    @staticmethod
-    def calc_procs(n_of_hosts: int) -> int:
-        return max(4, floor(log2(n_of_hosts))) * 2
+        Returns:
+            list[IPv6Address | IPv4Address]: List of available IPv6 
+            or IPv4 addresses on the network.
+        """
+        return list(self.target_network.hosts())
 
     @staticmethod
     def resolve_network(
@@ -40,7 +49,7 @@ class HostScanner:
         return network
 
     @staticmethod
-    def ping(target: IPv4Address | IPv6Address, count: int = 1) -> bool:
+    async def ping(target: IPv4Address | IPv6Address, count: int = 1) -> bool:
         """
         Check if a host is reachable (is up) using a ping
         command (subprocess).
@@ -49,40 +58,34 @@ class HostScanner:
         :param count: The number of ping packets to send. Default is 1.
         :return: Returns True if the host is reachable, otherwise False.
         """
-        if PLATAFORM == "Windows":
+        if PLATFORM == "Windows":
             command = ["ping", "/n", str(count), "/q", format(target)]
         else:
             command = ["ping", "-c", str(count), "-q", format(target)]
 
         try:
-            # This approach is veeeeeeery slow
-            result = subprocess.run(
-                command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL
             )
-            return result.returncode == 0
-        except Exception as e:
+            await process.communicate()
+            return process.returncode == 0
+        except Exception:
             return False
 
-    def ping_scan(self) -> list[IPv4Address | IPv6Address]:
+    async def ping_scan(self) -> list[IPv4Address | IPv6Address]:
         """
         Perform a ping scan on a network to identify reachable hosts.
 
         :return: A list of IP addresses that are reachable in the specified network.
         """
-        with pool.Pool(processes=HostScanner.calc_procs(self.n_of_hosts)) as p:
-            result = p.map(self.ping, list(self.target_network.hosts()))
+        tasks = [
+            asyncio.create_task(self.ping(host)) for host in self.target_network.hosts()
+        ]
+        results = await asyncio.gather(*tasks)
 
         up_hosts = [
-            host for n, host in enumerate(self.target_network.hosts()) if result[n]
+            host for host, is_up in zip(self.target_network.hosts(), results) if is_up
         ]
         return up_hosts
-
-
-if __name__ == "__main__":
-    sc = HostScanner("192.168.0.0/24")
-    print("[*] Scanning...")
-    hosts = sc.ping_scan()
-    if len(hosts) > 1:
-        print("[*] Hosts found: ")
-        for i, host in enumerate(hosts):
-            print(f"[{i}] {format(host)}")
