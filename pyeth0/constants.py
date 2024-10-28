@@ -43,8 +43,8 @@ COMMON_TCP_PORTS: dict[int, str] = {
 }
 
 
-def get_plataform() -> str:
+def get_platform() -> str:
     return platform.system()
 
 
-PLATAFORM = get_plataform()
+PLATFORM = get_platform()
