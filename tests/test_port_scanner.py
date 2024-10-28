@@ -1,13 +1,15 @@
 from pyeth0.port_scanner import PortScanner
 from ipaddress import ip_address
+import socket
 
 
 class TestPortScanner:
 
     def test_scan_port_open(self):
-        target = "scanme.nmap.org"
-        port = 22
-        assert PortScanner.scan_port(target, port) == True
+        target = "www.google.com"
+        target_ip = ip_address(socket.gethostbyname(target))
+        port = 80
+        assert PortScanner.scan_port(target_ip, port) == True
 
     def test_scan_port_closed(self):
         target = "scanme.nmap.org"
