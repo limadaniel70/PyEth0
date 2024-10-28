@@ -16,8 +16,8 @@ class HostScanner:
         Updates the target network for the host scanner.
 
         Args:
-            new_network (IPv4Network | IPv6Network | str): The new network to set, 
-            which can be an IPv4 network, IPv6 network, or a string representation 
+            new_network (IPv4Network | IPv6Network | str): The new network to set,
+            which can be an IPv4 network, IPv6 network, or a string representation
             of the network.
         """
         self.target_network = HostScanner.resolve_network(new_network)
@@ -29,7 +29,7 @@ class HostScanner:
         Generates a list containing the available hosts on a network.
 
         Returns:
-            list[IPv6Address | IPv4Address]: List of available IPv6 
+            list[IPv6Address | IPv4Address]: List of available IPv6
             or IPv4 addresses on the network.
         """
         return list(self.target_network.hosts())
@@ -67,7 +67,7 @@ class HostScanner:
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL
+                stderr=asyncio.subprocess.DEVNULL,
             )
             await process.communicate()
             return process.returncode == 0
@@ -89,3 +89,19 @@ class HostScanner:
             host for host, is_up in zip(self.target_network.hosts(), results) if is_up
         ]
         return up_hosts
+
+
+async def run_scanner():
+    network = "192.168.0.0/24"
+    hs = HostScanner(network)
+    print(f"[*] Scanning network {str(hs.target_network)}")
+    hosts = await hs.ping_scan()
+    print(f"[-] Found {len(hosts)} hosts:")
+    for i, host in enumerate(hosts):
+        print(f"\t[{i}] {host}".expandtabs(4))
+    print("-------------------------------")
+    print("[-] Scan finished")
+
+
+if __name__ == "__main__":
+    asyncio.run(run_scanner())
